@@ -2,7 +2,7 @@
 
 case "$1" in
     install|upgrade)
-        adduser --system --group --no-create-home --home=/var/lib/kafka kafka || :
+        adduser --system kafka --home /var/lib/kafka/ --shell /bin/false --group 
         ;;
     abort-upgrade)
         ;;

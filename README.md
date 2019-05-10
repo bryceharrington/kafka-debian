@@ -25,7 +25,11 @@ The specs are adapted to pre-built Apache Kafka.
 
 4. Build package
 
-```cd kafka-2.11-$version.tar.gz && dpkg-buildpackage -b```
+```cd kafka_2.11-$version && dpkg-buildpackage -b```
+ 
+or (if you do not want to gpg sign on the machine you are building on):
+
+```cd kafka_2.11-$version && debuild -b -uc -us```
 
 5. Install package
 
