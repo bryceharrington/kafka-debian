@@ -5,6 +5,14 @@ DISTRIBUTION="bionic"
 PPA_TAG="ppa"
 PPA_SEQ="1"
 
+step=1
+set -e # Exit on error
+
+function echo_step() {
+    echo -en "\e[1m\e[92m"
+    echo -n "#$((step++)): $1"
+    echo -e "\e[0m" 
+}
 
 # Download package only if we need it
 function download_kafka() {
@@ -33,7 +41,7 @@ function download_kafka() {
 ### Download packages ###
 #########################
 
-echo "Downloading kafka"
+echo_step "Downloading kafka"
 
 # Binary installer
 download_kafka "kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz" ${SOURCE_VERSION}
@@ -54,7 +62,7 @@ fi
 ### Prerequisites ###
 #####################
 
-echo "Installing build prereqs"
+echo_step "Installing build prereqs"
 
 # Prerequisite:  Java jdk/jre
 sudo apt-get -y remove  openjdk-8-jre openjdk-8-jdk
@@ -71,7 +79,7 @@ sudo apt-get install gradle
 ### Unpack the tarball ###
 ##########################
 
-echo "Unpacking tarballs"
+echo_step "Unpacking tarballs"
 
 tar -xzf kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz
 KAFKA_BINARY_DIR="kafka_${BINARY_VERSION}-${SOURCE_VERSION}"
@@ -90,6 +98,8 @@ fi
 #################################################
 ### Build binary release from upstream source ###
 #################################################
+
+echo_step "Building"
 
 cd ${KAFKA_DIR}
 # (Source patching could be done at this point)
@@ -110,7 +120,7 @@ cd ..
 ### Create debian package ###
 #############################
 
-echo "Creating debian package"
+echo_step "Creating debian package"
 
 # TODO: The above build commands need to go into debian/rules, until then
 #       we'll just package the binary release.
@@ -141,7 +151,7 @@ PACKAGE_VERSION=${SOURCE_VERSION}-${UBUNTU_REVISION}~${PPA_TAG}${PPA_SEQ}
 ### Build package ###
 #####################
 
-echo "Building installation package"
+echo_step "Building installation package"
 
 # If a bionic pbuilder is missing, will need to create it first
 if [ ! -d /var/cache/pbuilder/bionic-amd64 ]; then
