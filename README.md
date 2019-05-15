@@ -1,13 +1,16 @@
-# Debianization for the Apache Kafka server
+# Build Apache Kafka for Debian-based Systems
 
-The repo contains so called DEBIAN directory with
-scripts and configs needed to package the
-[Apache Kafka](http://kafka.apache.org/) server
-into a DEB package for the Debian Jessie distro.
+This repo builds Debian packages for
+[Apache Kafka](http://kafka.apache.org/)
+from binary tarballs for Debian/Ubuntu type systems.
 
-The specs are adapted to pre-built Apache Kafka.
+## Usage
 
-## Short DEB-packaging HowTo
+0. Install prerequisites
+
+```
+apt install devscripts debhelper
+```
 
 1. Download the upstream binary tarball with pre-built Apache Kafka from the
  [Kafka site](http://kafka.apache.org/downloads.html);
