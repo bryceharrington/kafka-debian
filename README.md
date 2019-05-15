@@ -9,7 +9,7 @@ The specs are adapted to pre-built Apache Kafka.
 
 ## Short DEB-packaging HowTo
 
-1. Download the upstream tarball with pre-built Apache Kafka from the
+1. Download the upstream binary tarball with pre-built Apache Kafka from the
  [Kafka site](http://kafka.apache.org/downloads.html);
  or use ``uscan`` to download automatically:
 

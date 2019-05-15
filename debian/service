@@ -1,5 +1,5 @@
 [Unit]
-Description=Apache Kafka
+Description=Kafka Messaging Service
 After=network.target
 
 [Service]
