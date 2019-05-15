@@ -11,6 +11,7 @@ Vcs-Browser: https://github.com/jani123/kafka-debian
 Package: kafka
 Architecture: all
 Depends: default-jre-headless, systemd-cron | cron, logrotate
+Suggests: zookeeperd
 Description: Distributed, partitioned, replicated commit log service.
  Kafka is a distributed, partitioned, replicated commit log service.
  It provides the functionality of a messaging system, but with a unique design.
