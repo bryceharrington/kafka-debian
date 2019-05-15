@@ -74,6 +74,10 @@ sudo apt-get -y install openjdk-11-source
 sudo add-apt-repository -yu ppa:cwchien/gradle
 sudo apt-get install gradle
 
+# Prerequisite:  Packaging helpers
+sudo apt-get -y --no-install-recommends --no-install-suggests install \
+    dpkg-dev devscripts tar dpkg-dev debhelper dh-systemd gnupg2
+
 
 ##########################
 ### Unpack the tarball ###
