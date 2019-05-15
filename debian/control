@@ -1,17 +1,24 @@
 Source: kafka
 Section: database
 Priority: extra
-Maintainer: Jani Hast <jh@janihast.fi>
-Build-Depends: debhelper, dh-systemd
-Standards-Version: 3.9.3
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Build-Depends: debhelper (>= 9),
+	       dh-systemd
+Standards-Version: 4.3.0
 Homepage: http://kafka.apache.org/
-Vcs-Git: https://github.com/jani123/kafka-debian.git
-Vcs-Browser: https://github.com/jani123/kafka-debian
+Vcs-Git:  git://git.launchpad.net/~bryce/+git/kafka-debian
+Vcs-Browser: https://code.launchpad.net/~bryce/+git/kafka-debian
 
 Package: kafka
 Architecture: all
-Depends: default-jre-headless, systemd-cron | cron, logrotate
+Depends: default-jre-headless,
+	 systemd-cron | cron,
+	 logrotate,
+	 adduser,
+	 ${java:Depends},
+	 ${misc:Depends}
 Suggests: zookeeperd
+Recommends: ${java:Recommends}
 Description: Distributed, partitioned, replicated commit log service.
  Kafka is a distributed, partitioned, replicated commit log service.
  It provides the functionality of a messaging system, but with a unique design.

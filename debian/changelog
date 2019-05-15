@@ -1,4 +1,15 @@
-kafka (2.2.0-2) unstable; urgency=low
+kafka (2.1.1-0ubuntu0) bionic; urgency=low
+
+  * Re-target to stable 2.1.1 series
+  * Add new build-from-url.sh script to generate binary package from
+    upstream source code.
+  * Incorporate selected changes from various forks of the EnvisionX
+    kafka-debian packaging.
+  * Update to newer debian packaging standards
+
+ -- Bryce Harrington <bryce@canonical.com>  Wed, 15 May 2019 15:16:31 -0700
+
+kafka (2.2.0-0) unstable; urgency=low
 
   * added systemd-cron as alternative dependency
 
