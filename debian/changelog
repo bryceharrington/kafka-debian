@@ -11,17 +11,12 @@ kafka (2.1.1-0ubuntu0) bionic; urgency=low
 
 kafka (2.2.0-0) unstable; urgency=low
 
+  * Updated kafka to 2.2.0 (Scala 2.11 edition) and fixed Ubuntu 18.04 build
   * added systemd-cron as alternative dependency
 
  -- Klavs Klavsen <klavs@EnableIT.dk>  Fri, 10 May 2019 14:07:00 +0200
 
-kafka (2.2.0-1) unstable; urgency=low
-
-  * Updated kafka to 2.2.0 (Scala 2.11 edition) and fixed Ubuntu 18.04 build
-
- -- Klavs Klavsen <klavs@EnableIT.dk>  Fri, 10 May 2019 13:07:00 +0200
-
-kafka (1.1.0-1) unstable; urgency=low
+kafka (1.1.0-0) unstable; urgency=low
 
   * Updated kafka to 1.1.0 (Scala 2.11 edition)
 
