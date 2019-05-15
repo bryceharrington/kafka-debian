@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+
+yellow=$(tput setaf 3)
+normal=$(tput sgr0)
+
+case "$1" in
+    configure)
+        if [ "x"$2 != "x" ]; then
+            # we are doing an upgrade
+            exit 0
+        fi
+        cat /etc/shadow | awk -F ':' '{ print $1 }' | grep -E '^kafka$' > /dev/null || useradd -d /var/lib/kafka/ -r kafka
+        chown -R kafka: /var/lib/kafka/ /var/log/kafka/
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
