@@ -6,12 +6,36 @@ PPA_TAG="bionic"
 PPA_SEQ="1"
 
 step=1
-set -e # Exit on error
 
 function echo_step() {
     echo -en "\e[1m\e[92m"
     echo -n "#$((step++)): $1"
     echo -e "\e[0m" 
+}
+
+function md5sum_pprint() {
+    # Reformat md5sum output to what kafka shows in their md5 files
+    s=${1^^}
+    filename=${2}
+    first=$(  echo ${s:0:16}  | sed 's/.\{2\}/& /g' | sed -e 's/[[:space:]]*$//')
+    second=$( echo ${s:16:16} | sed 's/.\{2\}/& /g' | sed -e 's/[[:space:]]*$//')
+    echo "$filename: ${first}  ${second}"
+}
+
+function check_md5_sig() {
+    md5_a=$(md5sum_pprint $(md5sum ${1}))
+    md5_b=$(cat $2)
+
+    if [ "${md5_a}" != "${md5_b}" ]; then
+	echo "'${md5_a}' != '${md5_b}'"
+	return 1
+    fi
+
+    return 0
+}
+
+function check_gpg_sig() {
+    gpg --verify $2 $1
 }
 
 # Download package only if we need it
@@ -21,19 +45,30 @@ function download_kafka() {
     echo ${package} ${release}
     if [ ! -e ${package} ]; then
 	# Install the signing keys
-	( cd /tmp && \
-	      wget https://www.apache.org/dist/kafka/KEYS && \
-	      gpg --import KEYS \
-	)
+	wget -O- https://www.apache.org/dist/kafka/KEYS | gpg --import 2> /dev/null
+	if [ $? -ne 0 ]; then
+	    echo "Error: Could not import gpg keys from kafka" >&2
+	    exit 1
+	fi
 
 	wget http://www.apache.org/dist/kafka/${release}/${package}
 	wget http://www.apache.org/dist/kafka/${release}/${package}.md5
-	wget http://www.apache.org/dist/kafka/${release}/${package}.sha512
 	wget http://www.apache.org/dist/kafka/${release}/${package}.asc
 
-	sha512sum ${package}
-	md5sum ${package}
-	gpg --verify ${package}.asc ${package}
+	echo "Checking md5 sig"
+	check_md5_sig ${package} ${package}.md5
+	if [ $? -ne 0 ]; then
+	    echo "Error: md5sum mismatch on ${package}" >&2
+	    exit 1
+	fi
+
+	echo "Checking gpg sig"
+	check_gpg_sig ${package} ${package}.asc
+	if [ $? -ne 0 ]; then
+	    echo "Error: Failed gpg verification on ${package}" >&2
+	    exit 1
+	fi
+	echo "All good"
     fi
 }
 
@@ -56,7 +91,6 @@ download_kafka "kafka-${SOURCE_VERSION}-src.tgz" ${SOURCE_VERSION}
 if [ ! -d kafka-debian ]; then
     git clone https://git.launchpad.net/~bryce/+git/kafka-debian
 fi
-
 
 #####################
 ### Prerequisites ###
@@ -105,7 +139,10 @@ fi
 echo_step "Building"
 
 cd ${KAFKA_DIR}
-# (Source patching could be done at this point)
+
+# Source patching could be done at this point
+# --> May want to set -PcommitId if this is done
+
 gradle
 ./gradlew jar
 ./gradlew srcJar
