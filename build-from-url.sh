@@ -1,8 +1,8 @@
-SOURCE_VERSION="2.1.1"
+SOURCE_VERSION="2.2.0"
 BINARY_VERSION="2.11"
-UBUNTU_REVISION="0ubuntu1"
+UBUNTU_REVISION="0ubuntu0"
 DISTRIBUTION="bionic"
-PPA_TAG="ppa"
+PPA_TAG="bionic"
 PPA_SEQ="1"
 
 step=1
@@ -54,7 +54,7 @@ download_kafka "kafka-${SOURCE_VERSION}-src.tgz" ${SOURCE_VERSION}
 
 # Download our own packaging to ./kafka-debian
 if [ ! -d kafka-debian ]; then
-    git clone https://bryce@git.launchpad.net/~bryce/+git/kafka-debian
+    git clone https://git.launchpad.net/~bryce/+git/kafka-debian
 fi
 
 
@@ -65,7 +65,6 @@ fi
 echo_step "Installing build prereqs"
 
 # Prerequisite:  Java jdk/jre
-sudo apt-get -y remove  openjdk-8-jre openjdk-8-jdk
 sudo apt-get -y install openjdk-11-jdk openjdk-11-jdk-headless
 sudo apt-get -y install openjdk-11-jre openjdk-11-jre-headless
 sudo apt-get -y install openjdk-11-source
@@ -114,11 +113,8 @@ gradle
 ./gradlew clean
 ./gradlew releaseTarGz
 
-ls -l ./core/build/distributions/
-
 ## Orig tarball
-cp ./core/build/distributions/kafka_2.11-2.1.1.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
-cd ..
+cp ./core/build/distributions/kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
 
 #############################
 ### Create debian package ###
@@ -141,14 +137,11 @@ cp -ar ./kafka-debian/debian ${KAFKA_DIR}/
 
 PACKAGE_VERSION=${SOURCE_VERSION}-${UBUNTU_REVISION}~${PPA_TAG}${PPA_SEQ}
 
-( \
-  cd ${KAFKA_DIR} && \
-  dch -v ${PACKAGE_VERSION} \
-      --distribution ${DISTRIBUTION} \
-      "Update to upstream binary release ${BINARY_VERSION}-${SOURCE_VERSION}" && \
-  echo "" > debian/patches/series && \
-  debuild -i -uc -us -S -sa
-)
+cd ${KAFKA_DIR}
+dch -v ${PACKAGE_VERSION} \
+    --distribution ${DISTRIBUTION} \
+    "Update to upstream binary release ${BINARY_VERSION}-${SOURCE_VERSION}"
+debuild -i -uc -us -S -sa
 
 
 #####################
@@ -168,4 +161,3 @@ echo "If satisfied, upload this to ppa via:"
 echo
 echo "  debsign kafka_${PACKAGE_VERSION}_source.changes"
 echo "  dput ppa:bryce/kafka-experimental kafka_${PACKAGE_VERSION}_source.changes"
-
