@@ -1,5 +1,5 @@
 SOURCE_VERSION="2.2.0"
-BINARY_VERSION="2.11"
+SCALA_VERSION="2.11"
 UBUNTU_REVISION="0ubuntu0"
 DISTRIBUTION="bionic"
 PPA_TAG="bionic"
@@ -79,10 +79,10 @@ function download_kafka() {
 echo_step "Downloading kafka"
 
 # Binary installer
-download_kafka "kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz" ${SOURCE_VERSION}
+download_kafka "kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz" ${SOURCE_VERSION}
 
 # Documentation
-download_kafka "kafka_${BINARY_VERSION}-${SOURCE_VERSION}-site-docs.tgz" ${SOURCE_VERSION}
+download_kafka "kafka_${SCALA_VERSION}-${SOURCE_VERSION}-site-docs.tgz" ${SOURCE_VERSION}
 
 # Source code
 download_kafka "kafka-${SOURCE_VERSION}-src.tgz" ${SOURCE_VERSION}
@@ -118,8 +118,8 @@ sudo apt-get -y --no-install-recommends --no-install-suggests install \
 
 echo_step "Unpacking tarballs"
 
-tar -xzf kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz
-KAFKA_BINARY_DIR="kafka_${BINARY_VERSION}-${SOURCE_VERSION}"
+tar -xzf kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz
+KAFKA_BINARY_DIR="kafka_${SCALA_VERSION}-${SOURCE_VERSION}"
 if [ ! -d ${KAFKA_BINARY_DIR}/ ]; then
     echo "Error: No ${KAFKA_BINARY_DIR}"
 fi
@@ -144,14 +144,14 @@ cd ${KAFKA_DIR}
 # --> May want to set -PcommitId if this is done
 
 gradle
-./gradlew jar
-./gradlew srcJar
+./gradlew -PscalaVersion=${SCALA_VERSION} jar
+./gradlew -PscalaVersion=${SCALA_VERSION} srcJar
 # (Various tests could be run at this point)
-./gradlew clean
-./gradlew releaseTarGz
+./gradlew -PscalaVersion=${SCALA_VERSION} clean
+./gradlew -PscalaVersion=${SCALA_VERSION} releaseTarGz
 
 ## Orig tarball
-cp ./core/build/distributions/kafka_${BINARY_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
+cp ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
 
 #############################
 ### Create debian package ###
@@ -177,7 +177,7 @@ PACKAGE_VERSION=${SOURCE_VERSION}-${UBUNTU_REVISION}~${PPA_TAG}${PPA_SEQ}
 cd ${KAFKA_DIR}
 dch -v ${PACKAGE_VERSION} \
     --distribution ${DISTRIBUTION} \
-    "Update to upstream binary release ${BINARY_VERSION}-${SOURCE_VERSION}"
+    "Update to upstream binary release ${SCALA_VERSION}-${SOURCE_VERSION}"
 debuild -i -uc -us -S -sa
 
 
