@@ -2,8 +2,10 @@ Source: kafka
 Section: database
 Priority: extra
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Build-Depends: debhelper (>= 9),
-	       dh-systemd
+Build-Depends:
+ debhelper (>= 11~),
+ dpkg-dev (>= 1.16.1),
+ dh-exec
 Standards-Version: 4.3.0
 Homepage: http://kafka.apache.org/
 Vcs-Git:  git://git.launchpad.net/~bryce/+git/kafka-debian
@@ -11,12 +13,13 @@ Vcs-Browser: https://code.launchpad.net/~bryce/+git/kafka-debian
 
 Package: kafka
 Architecture: all
-Depends: default-jre-headless,
-	 systemd-cron | cron,
-	 logrotate,
-	 adduser,
-	 ${java:Depends},
-	 ${misc:Depends}
+Depends:
+ adduser,
+ logrotate,
+ systemd-cron | cron,
+ default-jre-headless,
+ ${java:Depends},
+ ${misc:Depends}
 Suggests: zookeeperd
 Recommends: ${java:Recommends}
 Description: Distributed, partitioned, replicated commit log service.
