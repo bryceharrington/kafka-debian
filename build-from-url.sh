@@ -10,6 +10,11 @@ KAFKA_BINARY_DIR="kafka_${SCALA_VERSION}-${SOURCE_VERSION}"
 
 step=1
 
+function die() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
 function echo_step() {
     echo -en "\e[1m\e[92m"
     echo -n "#$((step++)): $1"
@@ -50,28 +55,20 @@ function download_kafka() {
 	# Install the signing keys
 	wget -O- https://www.apache.org/dist/kafka/KEYS | gpg --import 2> /dev/null
 	if [ $? -ne 0 ]; then
-	    echo "Error: Could not import gpg keys from kafka" >&2
-	    exit 1
+	    die "Could not import gpg keys from kafka"
 	fi
 
-	wget http://www.apache.org/dist/kafka/${release}/${package}
-	wget http://www.apache.org/dist/kafka/${release}/${package}.md5
-	wget http://www.apache.org/dist/kafka/${release}/${package}.asc
+	wget http://www.apache.org/dist/kafka/${release}/${package} || die "wget"
+	wget http://www.apache.org/dist/kafka/${release}/${package}.md5 || die "wget md5"
+	wget http://www.apache.org/dist/kafka/${release}/${package}.asc || die "wget asc"
 
 	echo "Checking md5 sig"
-	check_md5_sig ${package} ${package}.md5
-	if [ $? -ne 0 ]; then
-	    echo "Error: md5sum mismatch on ${package}" >&2
-	    exit 1
-	fi
+	check_md5_sig ${package} ${package}.md5 \
+	    || die "md5sum mismatch on ${package}"
 
 	echo "Checking gpg sig"
-	check_gpg_sig ${package} ${package}.asc
-	if [ $? -ne 0 ]; then
-	    echo "Error: Failed gpg verification on ${package}" >&2
-	    exit 1
-	fi
-	echo "All good"
+	check_gpg_sig ${package} ${package}.asc \
+	    || die "Failed gpg verification on ${package}"
     fi
 }
 
@@ -80,11 +77,8 @@ function apt_install() {
 
     dpkg -s ${package} > /dev/null
     if [ $? -ne 0 ]; then
-	sudo apt-get -y install ${package}
-	if [ $? -ne 0 ]; then
-	    echo "Error: Install of ${package} failed" >&2
-	    return 1
-	fi
+	sudo apt-get -y install ${package} \
+	    || die "Install of ${package} failed"
     fi
     return 0
 }
@@ -94,11 +88,8 @@ function apt_install_only() {
 
     dpkg -s ${package} > /dev/null
     if [ $? -ne 0 ]; then
-	sudo apt-get -y --no-install-recommends --no-install-suggests install ${package}
-	if [ $? -ne 0 ]; then
-	    echo "Error: Install of ${package} failed" >&2
-	    return 1
-	fi
+	sudo apt-get -y --no-install-recommends --no-install-suggests install ${package} \
+	    || die "Install of ${package} failed"
     fi
     return 0
 }
@@ -109,16 +100,10 @@ function ppa_install() {
 
     dpkg -s ${package} > /dev/null
     if [ $? -ne 0 ]; then
-	sudo add-apt-repository -yu ${ppa}
-	if [ $? -ne 0 ]; then
-	    echo "Error: Could not add the ${ppa} repo" >&2
-	    return 1
-	fi
-	sudo apt-get install ${package}
-	if [ $? -ne 0 ]; then
-	    echo "Error: Could not install ${package} from PPA" >&2
-	    return 1
-	fi
+	sudo add-apt-repository -yu ${ppa} \
+	    || die "Could not add the ${ppa} repo"
+	sudo apt-get install ${package} \
+	    || die "Could not install ${package} from PPA"
     fi
     return 0
 }
@@ -198,13 +183,13 @@ echo_step "Unpacking tarballs"
 
 tar -xzf kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz
 if [ ! -d ${KAFKA_BINARY_DIR}/ ]; then
-    echo "Error: No ${KAFKA_BINARY_DIR}"
+    die "No ${KAFKA_BINARY_DIR}"
 fi
 
 mkdir ${KAFKA_DIR}
 tar -xzf kafka-${SOURCE_VERSION}-src.tgz --strip-components=1 -C ${KAFKA_DIR}
 if [ ! -e ${KAFKA_DIR}/LICENSE ]; then
-    echo "Error: Failure extracting to ${KAFKA_DIR}"
+    die "Failure extracting to ${KAFKA_DIR}"
 fi
 
 #################################################
@@ -226,7 +211,11 @@ gradle
 ./gradlew -PscalaVersion=${SCALA_VERSION} releaseTarGz
 
 ## Orig tarball
-cp -v ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
+cp -v ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz \
+   ../kafka_${SOURCE_VERSION}.orig.tar.gz \
+   || die "Dist tarball could not be copied to orig"
+
+cd ..
 
 
 #############################
@@ -235,28 +224,25 @@ cp -v ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ..
 
 echo_step "Creating debian package"
 
-mkdir -p ${KAFKA_DIR}
-if [ $? -ne 0 ]; then
-    echo "Error: Could not create dir ${KAFKA_DIR}" >&2
-    exit 1
-fi
-
-tar xzf kafka_${SOURCE_VERSION}.orig.tar.gz --strip-components=1 -C ${KAFKA_DIR}
-if [ $? -ne 0 ]; then
-    echo "Could not untar orig tarball" >&2
-    exit 1
-fi
+mkdir -p ${KAFKA_DIR} || die "Could not create ${KAFKA_DIR}"
+tar xzf kafka_${SOURCE_VERSION}.orig.tar.gz --strip-components=1 -C ${KAFKA_DIR} \
+    || die "Could not untar orig tarball"
 
 # Insert the debian directory
-cp -ar ./kafka-debian/debian ${KAFKA_DIR}/
+cp -ar ./kafka-debian/debian ${KAFKA_DIR}/ \
+    || die "Could not add debian directory"
 
 PACKAGE_VERSION=${SOURCE_VERSION}-${UBUNTU_REVISION}~${PPA_TAG}${PPA_SEQ}
 
-cd ${KAFKA_DIR}
+cd ${KAFKA_DIR} \
+    || die "chdir ${KAFKA_DIR}"
 dch -v ${PACKAGE_VERSION} \
     --distribution ${DISTRIBUTION} \
-    "Update to upstream binary release ${SCALA_VERSION}-${SOURCE_VERSION}"
-debuild -i -uc -us -S -sa
+    "Update to upstream binary release ${SCALA_VERSION}-${SOURCE_VERSION}" \
+    || die "dch failed"
+
+debuild -i -uc -us -S -sa \
+    || die "debuild failed"
 
 
 #####################
