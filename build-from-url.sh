@@ -72,6 +72,80 @@ function download_kafka() {
     fi
 }
 
+function apt_install() {
+    package=$1
+
+    dpkg -s ${package} > /dev/null
+    if [ $? -ne 0 ]; then
+	sudo apt-get -y install ${package}
+	if [ $? -ne 0 ]; then
+	    echo "Error: Install of ${package} failed" >&2
+	    return 1
+	fi
+    fi
+    return 0
+}
+
+function apt_install_only() {
+    package=$1
+
+    dpkg -s ${package} > /dev/null
+    if [ $? -ne 0 ]; then
+	sudo apt-get -y --no-install-recommends --no-install-suggests install ${package}
+	if [ $? -ne 0 ]; then
+	    echo "Error: Install of ${package} failed" >&2
+	    return 1
+	fi
+    fi
+    return 0
+}
+
+function ppa_install() {
+    ppa=$1
+    package=$2
+
+    dpkg -s ${package} > /dev/null
+    if [ $? -ne 0 ]; then
+	sudo add-apt-repository -yu ${ppa}
+	if [ $? -ne 0 ]; then
+	    echo "Error: Could not add the ${ppa} repo" >&2
+	    return 1
+	fi
+	sudo apt-get install ${package}
+	if [ $? -ne 0 ]; then
+	    echo "Error: Could not install ${package} from PPA" >&2
+	    return 1
+	fi
+    fi
+    return 0
+}
+
+#####################
+### Prerequisites ###
+#####################
+
+echo_step "Installing build prereqs"
+
+# Prerequisite:  Java jdk/jre
+apt_install openjdk-11-jdk
+apt_install openjdk-11-jdk-headless
+apt_install openjdk-11-jre
+apt_install openjdk-11-jre-headless
+apt_install openjdk-11-source
+
+# Prerequisite:  Upgraded gradle (we need 4.7 at least, this gives latest)
+ppa_install ppa:cwchien/gradle gradle
+
+# Prerequisite:  Packaging helpers
+apt_install_only dpkg-dev
+apt_install_only devscripts
+apt_install_only tar
+apt_install_only dpkg-dev
+apt_install_only debhelper
+apt_install_only dh-systemd
+apt_install_only gnupg2
+
+
 #########################
 ### Download packages ###
 #########################
@@ -91,25 +165,6 @@ download_kafka "kafka-${SOURCE_VERSION}-src.tgz" ${SOURCE_VERSION}
 if [ ! -d kafka-debian ]; then
     git clone https://git.launchpad.net/~bryce/+git/kafka-debian
 fi
-
-#####################
-### Prerequisites ###
-#####################
-
-echo_step "Installing build prereqs"
-
-# Prerequisite:  Java jdk/jre
-sudo apt-get -y install openjdk-11-jdk openjdk-11-jdk-headless
-sudo apt-get -y install openjdk-11-jre openjdk-11-jre-headless
-sudo apt-get -y install openjdk-11-source
-
-# Prerequisite:  Upgraded gradle (we need 4.7 at least, this gives latest)
-sudo add-apt-repository -yu ppa:cwchien/gradle
-sudo apt-get install gradle
-
-# Prerequisite:  Packaging helpers
-sudo apt-get -y --no-install-recommends --no-install-suggests install \
-    dpkg-dev devscripts tar dpkg-dev debhelper dh-systemd gnupg2
 
 
 ##########################
