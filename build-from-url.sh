@@ -5,6 +5,9 @@ DISTRIBUTION="bionic"
 PPA_TAG="bionic"
 PPA_SEQ="1"
 
+KAFKA_DIR="kafka-${SOURCE_VERSION}"
+KAFKA_BINARY_DIR="kafka_${SCALA_VERSION}-${SOURCE_VERSION}"
+
 step=1
 
 function echo_step() {
@@ -120,6 +123,26 @@ function ppa_install() {
     return 0
 }
 
+
+##########################
+### Check dir is clean ###
+##########################
+
+exists=0
+if [ -e "${KAFKA_DIR}" ]; then 
+    echo "Existing ${KAFKA_DIR} needs moved aside or removed" >&2
+    exists=1
+fi
+if [ -e "${KAFKA_BINARY_DIR}" ]; then 
+    echo "Existing ${KAFKA_BINARY_DIR} needs moved aside or removed" >&2
+    exists=1
+fi
+
+if [ ${exists} -ne 0 ]; then
+    exit 1
+fi
+
+
 #####################
 ### Prerequisites ###
 #####################
@@ -174,14 +197,11 @@ fi
 echo_step "Unpacking tarballs"
 
 tar -xzf kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz
-KAFKA_BINARY_DIR="kafka_${SCALA_VERSION}-${SOURCE_VERSION}"
 if [ ! -d ${KAFKA_BINARY_DIR}/ ]; then
     echo "Error: No ${KAFKA_BINARY_DIR}"
 fi
 
-KAFKA_DIR="kafka-${SOURCE_VERSION}"
 mkdir ${KAFKA_DIR}
-
 tar -xzf kafka-${SOURCE_VERSION}-src.tgz --strip-components=1 -C ${KAFKA_DIR}
 if [ ! -e ${KAFKA_DIR}/LICENSE ]; then
     echo "Error: Failure extracting to ${KAFKA_DIR}"
@@ -206,7 +226,8 @@ gradle
 ./gradlew -PscalaVersion=${SCALA_VERSION} releaseTarGz
 
 ## Orig tarball
-cp ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
+cp -v ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ../kafka_${SOURCE_VERSION}.orig.tar.gz
+
 
 #############################
 ### Create debian package ###
@@ -214,15 +235,17 @@ cp ./core/build/distributions/kafka_${SCALA_VERSION}-${SOURCE_VERSION}.tgz ../ka
 
 echo_step "Creating debian package"
 
-# TODO: The above build commands need to go into debian/rules, until then
-#       we'll just package the binary release.
-#cp kafka-${SOURCE_VERSION}-src.tgz kafka_${SOURCE_VERSION}.orig.tar.gz
-
-rm -rf /tmp/${KAFKA_DIR}/
-mv ${KAFKA_DIR} /tmp/
-
 mkdir -p ${KAFKA_DIR}
+if [ $? -ne 0 ]; then
+    echo "Error: Could not create dir ${KAFKA_DIR}" >&2
+    exit 1
+fi
+
 tar xzf kafka_${SOURCE_VERSION}.orig.tar.gz --strip-components=1 -C ${KAFKA_DIR}
+if [ $? -ne 0 ]; then
+    echo "Could not untar orig tarball" >&2
+    exit 1
+fi
 
 # Insert the debian directory
 cp -ar ./kafka-debian/debian ${KAFKA_DIR}/
