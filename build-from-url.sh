@@ -186,10 +186,10 @@ if [ ! -d ${KAFKA_BINARY_DIR}/ ]; then
     die "No ${KAFKA_BINARY_DIR}"
 fi
 
-mkdir ${KAFKA_DIR}
-tar -xzf kafka-${SOURCE_VERSION}-src.tgz --strip-components=1 -C ${KAFKA_DIR}
-if [ ! -e ${KAFKA_DIR}/LICENSE ]; then
-    die "Failure extracting to ${KAFKA_DIR}"
+mkdir ${KAFKA_DIR}-build
+tar -xzf kafka-${SOURCE_VERSION}-src.tgz --strip-components=1 -C ${KAFKA_DIR}-build
+if [ ! -e ${KAFKA_DIR}-build/LICENSE ]; then
+    die "Failure extracting to ${KAFKA_DIR}-build"
 fi
 
 #################################################
@@ -198,12 +198,12 @@ fi
 
 echo_step "Building"
 
-cd ${KAFKA_DIR}
+cd ${KAFKA_DIR}-build
 
 # Source patching could be done at this point
 # --> May want to set -PcommitId if this is done
 
-gradle
+gradle --offline
 ./gradlew -PscalaVersion=${SCALA_VERSION} jar
 ./gradlew -PscalaVersion=${SCALA_VERSION} srcJar
 # (Various tests could be run at this point)
@@ -224,13 +224,16 @@ cd ..
 
 echo_step "Creating debian package"
 
-mkdir -p ${KAFKA_DIR} || die "Could not create ${KAFKA_DIR}"
+mkdir ${KAFKA_DIR} || die "Could not create ${KAFKA_DIR}"
 tar xzf kafka_${SOURCE_VERSION}.orig.tar.gz --strip-components=1 -C ${KAFKA_DIR} \
     || die "Could not untar orig tarball"
 
 # Insert the debian directory
 cp -ar ./kafka-debian/debian ${KAFKA_DIR}/ \
     || die "Could not add debian directory"
+
+# Temporarily disable all patches (FIXME)
+echo "" > ${KAFKA_DIR}/debian/patches/series
 
 PACKAGE_VERSION=${SOURCE_VERSION}-${UBUNTU_REVISION}~${PPA_TAG}${PPA_SEQ}
 
@@ -257,6 +260,7 @@ if [ ! -d /var/cache/pbuilder/bionic-amd64 ]; then
 fi
 
 echo "Now run: sudo DIST=bionic pbuilder build kafka_${PACKAGE_VERSION}.dsc"
+echo "  .debs will be in /var/cache/pbuilder/bionic-amd64/result/"
 echo
 echo "If satisfied, upload this to ppa via:"
 echo
